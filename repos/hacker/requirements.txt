@@ -1,5 +1,0 @@
-
-commune
-streamlit
-openai
-python-dotenv
