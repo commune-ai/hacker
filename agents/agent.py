@@ -21,7 +21,7 @@ prompt = """
     """
 
 
-class Chat(c.Module):
+class Hacker(c.Module):
 
     def __init__(self, 
                  max_tokens=420000, 
@@ -70,6 +70,7 @@ class Chat(c.Module):
             model= 'anthropic/claude-3.5-sonnet', 
             prompt= prompt,
             context_path = None,
+            repo_path = None,
             stream=True, 
             headers = None,
             ):
@@ -87,10 +88,13 @@ class Chat(c.Module):
             'prompt': prompt,
             'headers': headers
         }
-        for token in response:
-            data['output'] += token
-            yield token
-        self.history_module.add_data(data)
+        try:
+            for token in response:
+                data['output'] += token
+                yield token
+            self.history_module.add_data(data)
+        except Exception as e:
+            yield None
         yield 'done'
 
     def models(self):
@@ -100,7 +104,7 @@ class Chat(c.Module):
         text = self.prompt + '\n' + text
         if context_path:
             c.print('Adding content from path', context_path, color='yellow')
-            for file, content in self.get_file_context(context_path).items():
+            for file, content in self.get_context(context_path).items():
                 text += f'<file({file})>'
                 text += content
                 text += f'<file({file})>'
@@ -125,7 +129,8 @@ class Chat(c.Module):
         content = ''
         file_path = None
         file2content = {}
-        
+        buffer = '-------------'
+        color = c.random_color()
         for token in generator:
             content += token
             if repo_path == None:
@@ -139,17 +144,20 @@ class Chat(c.Module):
                     if os.path.exists(repo_path) and refresh:
                         c.print('Refreshing repo', repo_path, color='yellow')
                         c.rm(repo_path)
-                    c.print('Writing repo --> ', repo_name, color='green')
+                    c.print(buffer, 'CREATING REPO --> ', repo_name, buffer,color=color)
             
             if content.count('<file(') == 2 and content.count(')>') == 2:
+                
+                
                 file_path = content.split('<file(')[1].split(')>')[0]
                 file_path_tag = f'<file({file_path})>'
                 file_content = content.split(file_path_tag)[1].split('<file(')[0]
-                print('file_content', file_content, file_path)
                 assert repo_path, 'Please provide a repo name'
                 self.storage.write_file(repo_path + '/' + file_path, file_content)
-                c.print('Writing file --> ', file_path, color='green')
+                c.print(buffer,'Writing file --> ', file_path, buffer, color=color)
                 content = ''
+                color = c.random_color()
+            c.print(token, end='', color=color)
         
         return file2content
     
@@ -178,15 +186,14 @@ class Chat(c.Module):
 
      
 
-    def get_file_context(self, path, avoid=['repos', '__pycache__']):
+    def get_context(self, path, avoid=['repos', '__pycache__']):
         is_file = os.path.isfile(path)
         if os.path.isfile(path):
             paths = [path]
         path = self.resolve_path(path or './')
         if not path.endswith('/'):
             path += '/'
-        else:
-            paths = c.glob(path)
+        paths = c.glob(path)
         new_paths = []
         file_context = {}
         for p in paths:
@@ -198,3 +205,9 @@ class Chat(c.Module):
                 p = p[len(path):]
             file_context[p] = context
         return file_context
+    
+
+
+
+    # def build_file(self, path, context_path=None):
+        

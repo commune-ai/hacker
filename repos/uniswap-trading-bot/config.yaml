@@ -1,0 +1,25 @@
+
+ethereum:
+  rpc_url: "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+
+uniswap:
+  factory_address: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+  router_address: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+
+data:
+  start_date: "2020-05-01"
+  end_date: "2023-05-01"
+
+model:
+  input_size: 128
+  hidden_size: 256
+  num_layers: 4
+  num_heads: 8
+  dropout: 0.1
+
+trading:
+  base_token: "WETH"
+  quote_tokens: ["USDC", "DAI", "USDT"]
+  min_liquidity: 1000000
+  max_slippage: 0.005
+  gas_limit: 250000
