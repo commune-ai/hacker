@@ -24,9 +24,6 @@ class History(c.Module):
         history = self.history()
         return [h for h in history if query in str(h)]
 
-    def get_files(self, path=None):
-        path = path or './'
-        return c.glob(path)
     
     def add_data(self,data, path=None):
         if not path:

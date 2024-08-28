@@ -70,7 +70,7 @@ class Chat(c.Module):
             max_tokens= 1000000,
             model= 'anthropic/claude-3.5-sonnet', 
             prompt= prompt,
-            files = None,
+            file_context = None,
             stream=True, 
             headers = None,
             ):
@@ -78,7 +78,7 @@ class Chat(c.Module):
         if not self.public:
             c.verify(headers)
         
-        text = self.process_text(input, files=files)
+        text = self.process_text(input, file_context=file_context)
         response =  self.model.generate( text,stream=stream, model=model, max_tokens=max_tokens, temperature=temperature )
         data = {
             'input': input, 
@@ -102,15 +102,12 @@ class Chat(c.Module):
     def models(self):
         return self.model.models()
     
-    def process_text(self, text, files=None):
+    def process_text(self, text, file_context=None):
         text = self.prompt + '\n' + text
-        if files:
-            if isinstance(files, str):
-                files = [files]
-            text += '\n USE THE FOLLOWING TO WRITE FILES'
-            for file in files:
+        if file_context:
+            for file, content in file_context.items():
                 text += f'<file({file})>'
-                text += self.read_file(file)
+                text += content
                 text += f'<file({file})>'
 
         return text
@@ -125,11 +122,12 @@ class Chat(c.Module):
               data=None, 
               repo_name=None, 
               refresh=True,
+              file_context=None,
+              repo_path=None,
               target=None):
-        target = target or self.target_path
 
         if isinstance(text, str):
-            generator = self.generate(text)
+            generator = self.generate(text, file_context=file_context)
         elif isinstance(data, str):
             generator = data
         else:
@@ -138,24 +136,20 @@ class Chat(c.Module):
         content = ''
         file_path = None
         file2content = {}
-
-        file_open = False
-        repo_path = None
-        line = ''
         
- 
-        line_index = 0
         for token in generator:
             content += token
-            is_repo = '<repo(' in content and ')>' in content
-            if repo_name == None and is_repo:
-                repo_name = content.split('<repo(')[1].split(')>')[0]
-                repo_path = target + '/' + repo_name
-                if not os.path.exists(repo_path):
-                    os.makedirs(repo_path, exist_ok=True)
-                if os.path.exists(repo_path) and refresh:
-                    c.print('Refreshing repo', repo_path, color='yellow')
-                    c.rm(repo_path)
+            if repo_path == None:
+                target = target or self.target_path
+                is_repo = '<repo(' in content and ')>' in content
+                if repo_name == None and is_repo:
+                    repo_name = content.split('<repo(')[1].split(')>')[0]
+                    repo_path = target + '/' + repo_name
+                    if not os.path.exists(repo_path):
+                        os.makedirs(repo_path, exist_ok=True)
+                    if os.path.exists(repo_path) and refresh:
+                        c.print('Refreshing repo', repo_path, color='yellow')
+                        c.rm(repo_path)
 
                     
                     # c.rm(target)
@@ -176,12 +170,6 @@ class Chat(c.Module):
     
 
 
-    def edit_file(self, file_path, content):
-        with open(file_path, 'w+') as f:
-            f.write(content)
-        return True
-    
-
     def test(self):
         content = self.search_data('Solidity')[-2]['output']
         data = self.build(data=content)
@@ -199,16 +187,28 @@ class Chat(c.Module):
         return self.search_data(query)[-1]['output']
     
 
-    def edit_file(self, text='make it better',  files=None):
-        files = files or self.get_files()
-        return self.generate(text, files=files)
+    def edit(self, 
+             text='make it better avoid rewritting the files provided, and make a frontend in react',  
+             files=None, 
+             repo_path=None):
+        repo_path = repo_path or '/'.join(self.dirpath().split('/')[:-1]) + '/'
+        file_context = self.get_file_context(repo_path)
+        return self.build(text, file_context=file_context, repo_path=repo_path)
+
     
-    def get_files(self, path=None, avoid=['repos', '__pycache__']):
-        path = path or './'
+    def get_file_context(self, path=None, avoid=['repos', '__pycache__']):
+        path = self.resolve_path(path or './')
+        if not path.endswith('/'):
+            path += '/'
         paths = c.glob(path) 
+
         new_paths = []
+        file_context = {}
         for p in paths:
             if any([a in p for a in avoid]):
                 continue
             new_paths.append(p)
-        return new_paths
+            context = self.read_file(p)
+            p = p[len(path):]
+            file_context[p] = context
+        return file_context
