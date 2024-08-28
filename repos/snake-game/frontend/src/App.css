@@ -1,0 +1,17 @@
+
+.App {
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.game-container {
+  margin: 20px auto;
+  border: 1px solid #ccc;
+}
+
+button {
+  font-size: 16px;
+  padding: 10px 20px;
+  margin-top: 20px;
+  cursor: pointer;
+}

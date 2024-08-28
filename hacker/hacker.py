@@ -1,9 +1,8 @@
 import commune as c
 import streamlit as st
-st.write(c.pwd())
 import os
 # import the relative path of history beside this file pleae, relative imports done work lol
-
+from .storage import Storage
 from .history import History
 
 prompt = """
@@ -60,7 +59,7 @@ class Chat(c.Module):
         self.history_module = History(path= self.resolve_path(history_path))
         self.search_data = self.history_module.search_data
         self.history = self.history_module.history
-
+        self.storage = Storage(path='storage')
         return {'success':True, 'msg':'set_module passed'}
 
     @c.endpoint()
@@ -70,7 +69,7 @@ class Chat(c.Module):
             max_tokens= 1000000,
             model= 'anthropic/claude-3.5-sonnet', 
             prompt= prompt,
-            file_context = None,
+            context_path = None,
             stream=True, 
             headers = None,
             ):
@@ -78,7 +77,7 @@ class Chat(c.Module):
         if not self.public:
             c.verify(headers)
         
-        text = self.process_text(input, file_context=file_context)
+        text = self.process_text(input, context_path=context_path)
         response =  self.model.generate( text,stream=stream, model=model, max_tokens=max_tokens, temperature=temperature )
         data = {
             'input': input, 
@@ -94,40 +93,30 @@ class Chat(c.Module):
         self.history_module.add_data(data)
         yield 'done'
 
-    def ask(self, *text, **kwargs): 
-        return self.generate(' '.join(text), **kwargs)
-    def code(self, *text, **kwargs):
-        return self.generate(' '.join(text), **kwargs)
-    
     def models(self):
         return self.model.models()
-    
-    def process_text(self, text, file_context=None):
+
+    def process_text(self, text, context_path=None):
         text = self.prompt + '\n' + text
-        if file_context:
-            for file, content in file_context.items():
+        if context_path:
+            c.print('Adding content from path', context_path, color='yellow')
+            for file, content in self.get_file_context(context_path).items():
                 text += f'<file({file})>'
                 text += content
                 text += f'<file({file})>'
-
         return text
     
-
-    def read_file(self, file_path):
-        with open(file_path, 'r') as f:
-            return f.read()
-        
-
     def build(self, text=None, 
               data=None, 
               repo_name=None, 
               refresh=True,
-              file_context=None,
+              context_path=None,
               repo_path=None,
               target=None):
+        
 
         if isinstance(text, str):
-            generator = self.generate(text, file_context=file_context)
+            generator = self.generate(text, context_path=context_path)
         elif isinstance(data, str):
             generator = data
         else:
@@ -150,19 +139,15 @@ class Chat(c.Module):
                     if os.path.exists(repo_path) and refresh:
                         c.print('Refreshing repo', repo_path, color='yellow')
                         c.rm(repo_path)
-
-                    
-                    # c.rm(target)
-                c.print('Writing repo --> ', repo_name, color='green')
+                    c.print('Writing repo --> ', repo_name, color='green')
             
             if content.count('<file(') == 2 and content.count(')>') == 2:
-                file_open = False
                 file_path = content.split('<file(')[1].split(')>')[0]
                 file_path_tag = f'<file({file_path})>'
                 file_content = content.split(file_path_tag)[1].split('<file(')[0]
                 print('file_content', file_content, file_path)
                 assert repo_path, 'Please provide a repo name'
-                self.write_file(repo_path + '/' + file_path, file_content)
+                self.storage.write_file(repo_path + '/' + file_path, file_content)
                 c.print('Writing file --> ', file_path, color='green')
                 content = ''
         
@@ -175,40 +160,41 @@ class Chat(c.Module):
         data = self.build(data=content)
 
 
-    def write_file(self, path, data):
-        path_dir = '/'.join(path.split('/')[:-1])
-        if not os.path.exists(path_dir):
-            os.makedirs(path_dir, exist_ok=True)
-        with open(path, 'w') as f:
-            f.write(data)
-
-
     def search_output(self, query):
         return self.search_data(query)[-1]['output']
     
 
+    def default_repo_path(self):
+        return '/'.join(self.dirpath().split('/')[:-1]) + '/'
+
     def edit(self, 
              text='make it better avoid rewritting the files provided, and make a frontend in react',  
-             files=None, 
+             context_path=None,
              repo_path=None):
         repo_path = repo_path or '/'.join(self.dirpath().split('/')[:-1]) + '/'
-        file_context = self.get_file_context(repo_path)
-        return self.build(text, file_context=file_context, repo_path=repo_path)
+        return self.build(text, context_path=context_path, repo_path=repo_path)
 
     
-    def get_file_context(self, path=None, avoid=['repos', '__pycache__']):
+
+     
+
+    def get_file_context(self, path, avoid=['repos', '__pycache__']):
+        is_file = os.path.isfile(path)
+        if os.path.isfile(path):
+            paths = [path]
         path = self.resolve_path(path or './')
         if not path.endswith('/'):
             path += '/'
-        paths = c.glob(path) 
-
+        else:
+            paths = c.glob(path)
         new_paths = []
         file_context = {}
         for p in paths:
             if any([a in p for a in avoid]):
                 continue
             new_paths.append(p)
-            context = self.read_file(p)
-            p = p[len(path):]
+            context = self.storage.read_file(p)
+            if not is_file:
+                p = p[len(path):]
             file_context[p] = context
         return file_context
