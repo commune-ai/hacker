@@ -1,0 +1,11 @@
+
+version: '3'
+services:
+  testnet:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8545:8545"
+    volumes:
+      - ..:/app

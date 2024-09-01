@@ -1,0 +1,33 @@
+
+version: '3'
+
+services:
+  bridge:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+      - ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID
+
+  multisig:
+    build: .
+    command: python multisig_server.py
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+
+  solana_listener:
+    build: .
+    command: python solana_listener.py
+    volumes:
+      - .:/app
+
+  ethereum_listener:
+    build: .
+    command: python ethereum_listener.py
+    volumes:
+      - .:/app

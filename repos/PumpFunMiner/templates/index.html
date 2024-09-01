@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PumpFunMiner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #game-area, #leaderboard { margin: 20px; }
+        #mine-button { font-size: 18px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h1>PumpFunMiner</h1>
+    <div id="game-area">
+        <button id="mine-button">Mine</button>
+        <p>Your Score: <span id="score">0</span></p>
+    </div>
+    <div id="leaderboard">
+        <h2>Leaderboard</h2>
+        <ol id="leaderboard-list"></ol>
+    </div>
+
+    <script>
+        const socket = io();
+        let playerId;
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('player_joined', (data) => {
+            playerId = data.id;
+        });
+
+        socket.on('mine_result', (data) => {
+            if (data.id === playerId) {
+                document.getElementById('score').textContent = data.score;
+            }
+        });
+
+        socket.on('leaderboard_update', (data) => {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+            data.leaderboard.forEach((player) => {
+                const li = document.createElement('li');
+                li.textContent = `${player[0]}: ${player[1].score}`;
+                leaderboardList.appendChild(li);
+            });
+        });
+
+        socket.on('reward_sent', (data) => {
+            alert(`Player ${data.player} received ${data.amount} tokens as a reward!`);
+        });
+
+        document.getElementById('mine-button').addEventListener('click', () => {
+            socket.emit('mine');
+        });
+    </script>
+</body>
+</html>
