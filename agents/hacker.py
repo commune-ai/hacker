@@ -4,26 +4,35 @@ import os
 import time
 
 prompt = """
-
-    The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.
+    -- SYSTEM --
     
-    If you are a coder, write the files as such
-    Please use <repo(repo_name)> to name the repository and
-    <file(path/to/file)>
+    YOU ARE A CODER, YOU ARE MR.ROBOT, YOU ARE TRYING TO BUILD IN A SIMPLE
+    LEONARDO DA VINCI WAY, YOU ARE A HACKER, YOU ARE A GENIUS, YOU ARE A STAR, 
+    YOU FINISH ALL OF YOUR REQUESTS WITH UTMOST PRECISION AND SPEED, YOU WILL ALWAYS 
+    MAKE SURE THIS WORKS TO MAKE ANYONE CODE. YOU HAVE THE CONTEXT AND INPUTS FOR ASSISTANCE
+
+    -- INPUTS --
+    REPO_NAME str : {repo_name}
+    MODE : [SINGLE_FILE, MULTIPLE_FILES] =  {mode}
+
+    -- CONTEXT --
+    If you want to add context to the file, provide a path to the context folder
+    {}
+
+    -- OUTPUT FORMAT --
+    <repo(repo_name)> # start of repo
+    <file(path/to/file)> # start of file
     {file contents}
-    <file(path/to/file)>
+    <file(path/to/file)> # end of file
 
+    Please use  to name the repository and
     This is a a full repository construction and please
-
-    INCLUDE A README.md AND a scripts folder with the build.sh file to build hte environment in docker and a run.sh file to run the environment in docker
+    INCLUDE A README.md AND a scripts folder with the build.sh 
+    file to build hte environment in docker and a run.sh file 
+    to run the environment in docker
     """
 
-
-
-
-
-
-class Actor(c.Module):
+class Hacker(c.Module):
 
     def __init__(self, 
                  max_tokens=420000, 
@@ -108,14 +117,76 @@ class Actor(c.Module):
                 text += content
                 text += f'<file({file})>'
         return text
+    
+    def build(self, text=None, 
+              data=None, 
+              repo_name=None, 
+              refresh=True,
+              context_path=None,
+              target_path=None,
+              target=None):
+        if isinstance(text, str):
+            generator = self.generate(text, context_path=context_path)
+        elif isinstance(data, str):
+            generator = data
+        else:
+            raise ValueError('Please provide a text or data string')
+        # generator = self.search_output('app')
+        content = ''
+        file_path = None
+        file2content = {}
+        buffer = '-------------'
+        color = c.random_color()
+        print('Building repo')
+        for token in generator:
+            content += token
+            if target_path == None:
+                target = target or self.target_path
+                is_repo = '<repo(' in content and ')>' in content
+                if repo_name == None and is_repo:
+                    repo_name = content.split('<repo(')[1].split(')>')[0]
+                    target_path = target + '/' + repo_name
+                    if not os.path.exists(target_path):
+                        os.makedirs(target_path, exist_ok=True)
+                    if os.path.exists(target_path) and refresh:
+                        c.print('Refreshing repo', target_path, color='yellow')
+                        c.rm(target_path)
+                    c.print(buffer, 'CREATING REPO --> ', repo_name, buffer,color=color)
+            # is file entirely in the content
+
+            # anchors
+            prefix = '<file('
+            suffix = ')>'
+            is_file_in_content =  content.count(prefix) == 2 and content.count(suffix) == 2
+            if is_file_in_content:
+                file_path = content.split('<file(')[1].split(')>')[0]
+                file_path_tag = f'<file({file_path})>'
+                file_content = content.split(file_path_tag)[1].split('<file(')[0]
+                assert target_path, 'Please provide a repo name'
+                self.write_file(target_path + '/' + file_path, file_content)
+                c.print(buffer,'Writing file --> ', file_path, buffer, color=color)
+                content = ''
+                color = c.random_color()
+            c.print(token, end='', color=color)
+        
+        return file2content
+    
+
 
     def test(self):
         content = self.search_data('Solidity')[-2]['output']
         data = self.build(data=content)
 
+
     def search_output(self, query):
         return self.search_data(query)[-1]['output']
     
+    def edit(self, 
+             text='make it better avoid rewritting the files provided, and make a frontend in react',  
+             context_path=None,
+             target_path=None):
+        target_path = target_path or '/'.join(self.dirpath().split('/')[:-1]) + '/'
+        return self.build(text, context_path=context_path, target_path=target_path)
 
     def get_context(self, path, avoid=['repos', '__pycache__']):
         is_file = os.path.isfile(path)
@@ -171,11 +242,3 @@ class Actor(c.Module):
     def save_data(self,data):
         path = self.history_path + '/' + str(time.time())
         return self.put(path, data)
-    
-    def remove_all_data(self):
-        # prompt are you sure
-        return self.rm(self.history_path)
-    
-    def test(self):
-        self.generate('whats 2+2?')
-        

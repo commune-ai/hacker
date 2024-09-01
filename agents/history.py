@@ -4,27 +4,23 @@ import time
 class History(c.Module):
 
     def __init__(self, 
-                 max_tokens=420000, 
                  path='history',
                 **kwargs):
-        self.path = path
-        self.max_tokens = max_tokens
+        self.set_path(path)
+        
+    def set_path(self, path):
+        self.path = c.resolve_path(path)
     
     def history_paths(self):
-        return self.ls(self.path)
+        return c.ls(self.path)
     
     def history(self):
-        path = self.path
-        history = []
-        for p in c.ls(path):
-            history += [self.get(p)]
-        return history
+        return [self.get(p) for p in self.history_paths()]
     
     def search_data(self, query):
         history = self.history()
         return [h for h in history if query in str(h)]
 
-    
     def add_data(self,data, path=None):
         if not path:
             path = self.path + '/' + str(time.time())

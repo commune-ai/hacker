@@ -1,0 +1,4 @@
+
+# Add your required Python packages here
+pytest
+requests

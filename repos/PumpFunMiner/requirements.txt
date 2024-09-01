@@ -1,0 +1,5 @@
+
+Flask==2.0.2
+Flask-SocketIO==5.1.1
+solana==0.23.0
+pytest==6.2.5

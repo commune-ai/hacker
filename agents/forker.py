@@ -1,9 +1,12 @@
 import commune as c
 import os
-agent = c.module('agent')
+agent = c.module('hacker')
+prompt = c.get_text(c.pwd() + '/prompts/spawner.txt')
+
+
 class Forker(agent):
     def edit(self, 
-             text='make it better avoid rewritting the files provided, and make a frontend in react', 
+             text='make this', 
              path = None):
-        path  = self.resolve_path(path or c.pwd())
-        return self.generate(text, context_path=path)
+        # path  = self.resolve_path(path or c.pwd())
+        return self.build(prompt, context_path=path)
