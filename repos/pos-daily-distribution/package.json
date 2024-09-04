@@ -1,0 +1,30 @@
+
+{
+  "name": "pos-daily-distribution",
+  "version": "1.0.0",
+  "description": "Proof of Stake Daily Distribution Smart Contract",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js"
+  },
+  "keywords": [
+    "ethereum",
+    "smart-contract",
+    "proof-of-stake"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.0",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.0.0",
+    "ethers": "^5.0.0",
+    "hardhat": "^2.9.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0"
+  }
+}

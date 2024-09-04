@@ -12,19 +12,17 @@ prompt = """
     MAKE SURE THIS WORKS TO MAKE ANYONE CODE. YOU HAVE THE CONTEXT AND INPUTS FOR ASSISTANCE
 
     -- INPUTS --
-    REPO_NAME str : {repo_name}
     MODE : [SINGLE_FILE, MULTIPLE_FILES] =  {mode}
 
     -- CONTEXT --
     If you want to add context to the file, provide a path to the context folder
-    {}
 
     -- OUTPUT FORMAT --
-    <repo(repo_name)> # start of repo
-    <file(path/to/file)> # start of file
-    {file contents}
-    <file(path/to/file)> # end of file
-
+    <{repo_start}(repo_name)> # start of repo
+    <{file_start}(path/to/file)> # start of file
+    FILE CONTENTS
+    <{file_end}(path/to/file)> # end of file
+    <{repo_end}(repo_name)> # end of repo
     Please use  to name the repository and
     This is a a full repository construction and please
     INCLUDE A README.md AND a scripts folder with the build.sh 
@@ -33,12 +31,16 @@ prompt = """
     """
 
 class Hacker(c.Module):
-
+    repo_start = 'REPOSTART'
+    repo_end = 'REPOEND'
+    file_start = 'FILESTART'
+    file_end = 'FILEEND'
     def __init__(self, 
                  max_tokens=420000, 
                  password = None,
                  text = 'Hello whaduop fam',
                  prompt = prompt,
+                 mode = 'MULTIPLE_FILES',
                  model = None,
                  history_path='history',
                  target_path = None,
@@ -63,6 +65,7 @@ class Hacker(c.Module):
                    prompt = 'The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.',
                    key=None,
                     **kwargs):
+        
         self.prompt = prompt
         self.admin_key = c.pwd2key(password) if password else self.key
         self.model = c.module('model.openrouter')(model=model)
@@ -107,15 +110,18 @@ class Hacker(c.Module):
     def models(self):
         return self.model.models()
 
-    def process_text(self, text, context_path=None, prompt=None):
+    def process_text(self, text, context_path=None, prompt=None, mode='MULTIPLE_FILES'):
         prompt = prompt or self.prompt
+        prompt = prompt.format(repo_start=self.repo_start, repo_end=self.repo_end, \
+                                    file_start=self.file_start, file_end=self.file_end, mode=mode
+                                    )
         text = prompt + '\n' + text
         if context_path:
             c.print('Adding content from path', context_path, color='yellow')
             for file, content in self.get_context(context_path).items():
-                text += f'<file({file})>'
+                text += f'<{self.file_start}({file})>'
                 text += content
-                text += f'<file({file})>'
+                text += f'<<{self.file_end}({file})>'
         return text
     
     def build(self, text=None, 
@@ -142,9 +148,9 @@ class Hacker(c.Module):
             content += token
             if target_path == None:
                 target = target or self.target_path
-                is_repo = '<repo(' in content and ')>' in content
+                is_repo = f'<{self.repo_start}(' in content and ')>' in content
                 if repo_name == None and is_repo:
-                    repo_name = content.split('<repo(')[1].split(')>')[0]
+                    repo_name = content.split(self.repo_start)[1].split(')>')[0]
                     target_path = target + '/' + repo_name
                     if not os.path.exists(target_path):
                         os.makedirs(target_path, exist_ok=True)
@@ -154,24 +160,23 @@ class Hacker(c.Module):
                     c.print(buffer, 'CREATING REPO --> ', repo_name, buffer,color=color)
             # is file entirely in the content
 
-            # anchors
-            prefix = '<file('
-            suffix = ')>'
-            is_file_in_content =  content.count(prefix) == 2 and content.count(suffix) == 2
+            # anchors for the file where 
+            # <FILESTART(path/to/file)> content <FILEEND(path/to/file)>
+            file_start = f'<{self.file_start}('
+            file_end = f'<{self.file_end}('
+            is_file_in_content =  content.count(file_start) == 1 and content.count(file_end) == 1
+            c.print(token, end='', color=color)
             if is_file_in_content:
-                file_path = content.split('<file(')[1].split(')>')[0]
-                file_path_tag = f'<file({file_path})>'
-                file_content = content.split(file_path_tag)[1].split('<file(')[0]
+                file_path = content.split(file_start)[1].split(')>')[0]
+                file_path_tag = f'{file_start}{file_path})>'
+                file_content = content.split(file_path_tag)[1].split(file_end)[0]
                 assert target_path, 'Please provide a repo name'
                 self.write_file(target_path + '/' + file_path, file_content)
                 c.print(buffer,'Writing file --> ', file_path, buffer, color=color)
                 content = ''
                 color = c.random_color()
-            c.print(token, end='', color=color)
         
         return file2content
-    
-
 
     def test(self):
         content = self.search_data('Solidity')[-2]['output']
