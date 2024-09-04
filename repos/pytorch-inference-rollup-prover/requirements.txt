@@ -1,0 +1,5 @@
+
+torch==1.9.0
+torchvision==0.10.0
+web3==5.23.0
+pytest==6.2.5

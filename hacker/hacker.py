@@ -11,30 +11,33 @@ prompt = """
     YOU FINISH ALL OF YOUR REQUESTS WITH UTMOST PRECISION AND SPEED, YOU WILL ALWAYS 
     MAKE SURE THIS WORKS TO MAKE ANYONE CODE. YOU HAVE THE CONTEXT AND INPUTS FOR ASSISTANCE
 
+    -- IMPORTANT --
+    - Please use  to name the repository and
+    - This is a a full repository construction and please
+    - INCLUDE A README.md AND a scripts folder with the build.sh 
+    - file to build hte environment in docker and a run.sh file 
+    - to run the environment in docker
+    - INCLUDE A TESTS folder for pytests
+
     -- INPUTS --
     MODE : [SINGLE_FILE, MULTIPLE_FILES] =  {mode}
 
     -- CONTEXT --
-    If you want to add context to the file, provide a path to the context folder
-
+    - If you want to add context to the file, provide a path to the context folder
     -- OUTPUT FORMAT --
     <{repo_start}(repo_name)> # start of repo
     <{file_start}(path/to/file)> # start of file
     FILE CONTENTS
     <{file_end}(path/to/file)> # end of file
     <{repo_end}(repo_name)> # end of repo
-    Please use  to name the repository and
-    This is a a full repository construction and please
-    INCLUDE A README.md AND a scripts folder with the build.sh 
-    file to build hte environment in docker and a run.sh file 
-    to run the environment in docker
+
     """
 
 class Hacker(c.Module):
-    repo_start = 'REPOSTART'
-    repo_end = 'REPOEND'
-    file_start = 'FILESTART'
-    file_end = 'FILEEND'
+    repo_start = 'REPO_START'
+    repo_end = 'REPO_END'
+    file_start = 'FILE_START'
+    file_end = 'FILE_END'
     def __init__(self, 
                  max_tokens=420000, 
                  password = None,
@@ -148,9 +151,10 @@ class Hacker(c.Module):
             content += token
             if target_path == None:
                 target = target or self.target_path
-                is_repo = f'<{self.repo_start}(' in content and ')>' in content
+                repo_start =  f'<{self.repo_start}('
+                is_repo = repo_start in content and ')>' in content
                 if repo_name == None and is_repo:
-                    repo_name = content.split(self.repo_start)[1].split(')>')[0]
+                    repo_name = content.split(repo_start)[1].split(')>')[0]
                     target_path = target + '/' + repo_name
                     if not os.path.exists(target_path):
                         os.makedirs(target_path, exist_ok=True)

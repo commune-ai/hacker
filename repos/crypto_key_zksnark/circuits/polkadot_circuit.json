@@ -1,0 +1,17 @@
+
+{
+    "name": "PolkadotKeyCircuit",
+    "description": "Circuit for proving knowledge of a valid Polkadot private key",
+    "inputs": [
+        {"name": "private_key", "type": "field"}
+    ],
+    "outputs": [
+        {"name": "valid", "type": "bool"}
+    ],
+    "logic": [
+        // Simplified representation of Polkadot key validation logic
+        // In a real implementation, this would include more complex checks
+        {"op": "assert_range", "args": ["private_key", 0, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"]},
+        {"op": "set", "args": ["valid", true]}
+    ]
+}

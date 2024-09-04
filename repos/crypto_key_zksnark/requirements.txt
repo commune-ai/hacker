@@ -1,0 +1,4 @@
+
+ezkl==0.3.0
+cryptography==3.4.7
+pytest==6.2.5

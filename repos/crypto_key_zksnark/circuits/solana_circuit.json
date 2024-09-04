@@ -1,0 +1,17 @@
+
+{
+    "name": "SolanaKeyCircuit",
+    "description": "Circuit for proving knowledge of a valid Solana private key",
+    "inputs": [
+        {"name": "private_key", "type": "field"}
+    ],
+    "outputs": [
+        {"name": "valid", "type": "bool"}
+    ],
+    "logic": [
+        // Simplified representation of Solana key validation logic
+        // In a real implementation, this would include more complex checks
+        {"op": "assert_range", "args": ["private_key", 0, "0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed"]},
+        {"op": "set", "args": ["valid", true]}
+    ]
+}
