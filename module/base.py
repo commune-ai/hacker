@@ -14,8 +14,6 @@ class Base(c.Module):
     def history_paths(self):
         return c.ls(self.path)
     
-
-    
     def history(self):
         return [self.get(p) for p in self.history_paths()]
     
@@ -34,7 +32,6 @@ class Base(c.Module):
         path = self.resolve_path(path)
         return self.rm()
 
-  
     def load_prompt(self, path):
         prompt_dir = '/'.join(__file__.split('/')[:-2]) + '/prompts'
         if prompt_dir not in path:
@@ -79,8 +76,13 @@ class Base(c.Module):
             context_content += f'<{self.file_start}({file})>'
             context_content += content
             context_content += f'<{self.file_end}({file})>'
-        prompt = prompt.format(file_start=self.file_start, file_end=self.file_end, context = context_content)
+        prompt = prompt.format(file_start=self.file_start, 
+                               file_end=self.file_end,
+                               repo_start=self.repo_start,
+                               repo_end=self.repo_end,
+                                 context = context_content)
         text = prompt + '\n' + text
+        print(text, 'FAM', self.prompt)
         return text
     
     def models(self):
@@ -90,6 +92,8 @@ class Base(c.Module):
         return os.path.isfile(path)
 
     def file2content(self, path, avoid=['__pycache__']):
+        if not os.path.exists(str(path)):
+            return {}
         path = c.resolve_path(path or './')
         is_file = os.path.isfile(path)
         paths = [path] if is_file else c.glob(path)
@@ -99,8 +103,33 @@ class Base(c.Module):
             if any([a in p for a in avoid]):
                 continue
             new_paths.append(p)
+            print(p)
             context = self.read_file(p)
             if not is_file:
                 p = p[len(path):]
             file_context[p] = context
         return file_context
+    
+    def set_model(self,
+                    model, 
+                   history_path='history', 
+                   password=None,
+                    **kwargs):
+        
+        self.admin_key = c.pwd2key(password) if password else self.key
+        self.model = c.module('model.openrouter')(model=model)
+        self.models = self.model.models()
+        self.history_path = self.resolve_path(history_path)
+        return {'success':True, 'msg':'set_module passed'}
+
+
+    def prompt_args(self):
+        # get all of the names of the variables in the prompt
+        prompt = self.prompt
+        variables = []
+        for line in prompt.split('\n'):
+            if '{' in line and '}' in line:
+                variable = line.split('{')[1].split('}')[0]
+                variables.append(variable)
+
+        return variables

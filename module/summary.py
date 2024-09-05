@@ -90,4 +90,16 @@ class Summarizer(Base):
         self.save_data(data)
         yield {'success':True, 'msg':'done', 'data_hash':c.hash(data)}
 
-    
+    def process_text(self, text, context=None):
+        prompt = self.prompt
+        context_content = ''
+        assert c.exists(self.resolve_path(context)), f'Context path {context} does not exist'
+        c.print('Adding content from path', context, color='yellow')
+        for file, content in self.file2content(context).items():
+            context_content += f'<{self.file_start}({file})>'
+            context_content += content
+            context_content += f'<{self.file_end}({file})>'
+        prompt = prompt.format(file_start=self.file_start, file_end=self.file_end, context = context_content)
+        text = prompt + '\n' + text
+        print(text, 'FAM', self.prompt)
+        return text
