@@ -151,15 +151,3 @@ class Hacker(Base):
         
         return file2content
     
-
-
-    def prompt_args(self):
-        # get all of the names of the variables in the prompt
-        prompt = self.prompt
-        variables = []
-        for line in prompt.split('\n'):
-            if '{' in line and '}' in line:
-                variable = line.split('{')[1].split('}')[0]
-                variables.append(variable)
-
-        return variables
