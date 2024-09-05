@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repo Finetuner</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Repo Finetuner</h1>
+    <form id="finetuneForm">
+        <label for="model_name">Model Name:</label>
+        <input type="text" id="model_name" name="model_name" required><br><br>
+        <label for="data_path">Data Path:</label>
+        <input type="text" id="data_path" name="data_path" required><br><br>
+        <button type="submit">Start Finetuning</button>
+    </form>
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('finetuneForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            axios.post('/finetune', formData)
+                .then(function (response) {
+                    const taskId = response.data.task_id;
+                    checkStatus(taskId);
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                });
+        });
+
+        function checkStatus(taskId) {
+            axios.get(`/status/${taskId}`)
+                .then(function (response) {
+                    const status = response.data.status;
+                    const progress = response.data.progress;
+                    document.getElementById('status').innerHTML = `Status: ${status}, Progress: ${progress}%`;
+                    if (status !== 'completed') {
+                        setTimeout(() => checkStatus(taskId), 5000);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+</html>
