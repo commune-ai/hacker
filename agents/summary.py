@@ -1,10 +1,5 @@
 import commune as c
-import os
-# import the relative path of history beside this file pleae, relative imports done work lol
-import time
 from .base import Base
-
-
 
 class Summarizer(Base):
 
@@ -95,10 +90,13 @@ class Summarizer(Base):
         context_content = ''
         assert c.exists(self.resolve_path(context)), f'Context path {context} does not exist'
         c.print('Adding content from path', context, color='yellow')
-        for file, content in self.file2content(context).items():
+        file2content = self.file2content(context)
+        print(file2content, 'FAMMMM')
+        for file, content in file2content.items():
             context_content += f'<{self.file_start}({file})>'
             context_content += content
             context_content += f'<{self.file_end}({file})>'
+            print(context_content)
         prompt = prompt.format(file_start=self.file_start, file_end=self.file_end, context = context_content)
         text = prompt + '\n' + text
         print(text, 'FAM', self.prompt)

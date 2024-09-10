@@ -1,0 +1,5 @@
+
+web3==5.28.0
+pytest==6.2.5
+fastapi==0.68.0
+uvicorn==0.15.0
