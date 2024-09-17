@@ -1,0 +1,10 @@
+
+{
+    "ethereum_node_url": "https://mainnet.infura.io/v3/YOUR-PROJECT-ID",
+    "pool_addresses": [
+        "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8",
+        "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
+    ],
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31"
+}

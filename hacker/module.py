@@ -2,8 +2,6 @@ import commune as c
 import time
 import os
 
-
-
 class Base(c.Module):
     public = True
     prompt = """
@@ -104,25 +102,7 @@ class Base(c.Module):
     def save_data(self,data):
         path = self.path + '/' + str(time.time())
         return self.put(path, data)
-    
-    def process_text(self, text, context=None):
-        prompt = self.prompt
-        context_content = ''
-        assert c.exists(self.resolve_path(context)), f'Context path {context} does not exist'
-        c.print('Adding content from path', context, color='yellow')
-        for file, content in self.file2content(context).items():
-            context_content += f'<{self.file_start}({file})>'
-            context_content += content
-            context_content += f'<{self.file_end}({file})>'
-        prompt = prompt.format(file_start=self.file_start, 
-                               file_end=self.file_end,
-                               repo_start=self.repo_start,
-                               repo_end=self.repo_end,
-                                 context = context_content)
-        text = prompt + '\n' + text
-        print(text, 'FAM', self.prompt)
-        return text
-    
+
     def models(self):
         return self.model.models()
     
@@ -260,5 +240,18 @@ class Base(c.Module):
 
 
 
+    def process_text(self, text, context=None):
+        prompt = self.prompt
+        c.print('Adding content from path', context, color='yellow')
+        context = c.file2text(context) if context else ''
+        print(context, 'CONTEXT')
+        prompt = prompt.format(file_start=self.file_start, 
+                               file_end=self.file_end,
+                               repo_start=self.repo_start,
+                               repo_end=self.repo_end,
+                                 context = context)
+        text = prompt + '\n' + text
+        return text
+    
 
     gen = generate
