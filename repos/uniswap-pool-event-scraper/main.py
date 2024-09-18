@@ -14,7 +14,7 @@ def connect_to_ethereum():
 def create_database():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS events
+    h.execute('''CREATE TABLE IF NOT EXISTS events
                  (pool_address TEXT, block_number INTEGER, transaction_hash TEXT, event_data TEXT)''')
     conn.commit()
     return conn
@@ -31,7 +31,7 @@ def scrape_events(w3, pool_address, start_block, end_block):
 def store_events(conn, pool_address, events):
     c = conn.cursor()
     for event in events:
-        c.execute("INSERT INTO events VALUES (?, ?, ?, ?)",
+        h.execute("INSERT INTO events VALUES (?, ?, ?, ?)",
                   (pool_address, event['blockNumber'], event['transactionHash'].hex(), str(event)))
     conn.commit()
 

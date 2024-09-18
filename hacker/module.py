@@ -1,8 +1,9 @@
 import commune as c
 import time
 import os
+# import hacker as h
 
-class Base(c.Module):
+class Module(c.Module):
     public = True
     prompt = """
         -- SYSTEM --
@@ -25,7 +26,7 @@ class Base(c.Module):
         <{file_end}(path/to/file)> # end of file
         <{repo_end}(repo_name)> # end of repo
         """
-
+    
     repo_start = 'REPO_START'
     repo_end = 'REPO_END'
     file_start = 'FILE_START'
@@ -47,6 +48,7 @@ class Base(c.Module):
 
     def set_history_path(self, path):
         self.path = c.resolve_path(path)
+
     def history_paths(self):
         return c.ls(self.path)
     
@@ -76,7 +78,7 @@ class Base(c.Module):
 
     def write_file(self, path, data):
         path_dir = '/'.join(path.split('/')[:-1])
-        if not os.path.exists(path_dir):
+        if not os.patc.exists(path_dir):
             os.makedirs(path_dir, exist_ok=True)
         with open(path, 'w') as f:
             f.write(data)
@@ -107,13 +109,13 @@ class Base(c.Module):
         return self.model.models()
     
     def is_file(self, path): 
-        return os.path.isfile(path)
+        return os.patc.isfile(path)
 
     def file2content(self, path, avoid=['__pycache__']):
-        if not os.path.exists(str(path)):
+        if not os.patc.exists(str(path)):
             return {}
         path = c.resolve_path(path or './')
-        is_file = os.path.isfile(path)
+        is_file = os.patc.isfile(path)
         paths = [path] if is_file else c.glob(path)
         new_paths = []
         file_context = {}
@@ -158,10 +160,10 @@ class Base(c.Module):
               repo_name=None, 
               refresh=True,
               target=None,
-              context=None):
+              context=None, model=None):
         target = target or self.target
         if isinstance(text, str):
-            generator = self.generate(text, context=context )
+            generator = self.generate(text, context=context , model=model)
         elif isinstance(data, str):
             generator = data
         else:
@@ -183,9 +185,9 @@ class Base(c.Module):
             if repo_name == None and is_repo:
                 repo_name = content.split(repo_start)[1].split(')>')[0]
                 target = target + '/' + repo_name
-                if not os.path.exists(target):
+                if not os.patc.exists(target):
                     os.makedirs(target, exist_ok=True)
-                if os.path.exists(target) and refresh:
+                if os.patc.exists(target) and refresh:
                     c.print('Refreshing repo', target, color='yellow')
                     c.rm(target)
                 c.print(buffer, 'CREATING REPO --> ', repo_name, buffer,color=color)

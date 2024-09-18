@@ -1,13 +1,8 @@
-import commune as c
-from .base import Base
+import hacker as h
 
-class Summarizer(Base):
+class Summarizer(h.Module):
 
     prompt = """
-        -- ROLE --
-
-        SUMMARIZER
-
         -- OBJECTIVE --
         - include all import paths and their schema and include input and output format for the model to understand
         - If you want to add context to the file, provide a path to the context folder
@@ -15,12 +10,9 @@ class Summarizer(Base):
         - include all of the types like for linting
         - if it is a class or object oriented code, include the class and the methods and the attributes
         - if the user is asking a question about it, follow their instructions, if you need to generate files that would help the repo
-        
         -- CONTEXT --
         {context}
-        
         -- FILE OUTPUT/INPUT FORMAT --
-
         <{file_start}(path/to/file)> # start of file
         <{file_end}(path/to/file)> # end of file
         """
@@ -39,11 +31,11 @@ class Summarizer(Base):
         self.max_tokens = max_tokens
         self.public = public
         self.target_path =target_path or ('/'.join(self.dirpath().split('/')[:-1]) + '/repos')
-        self.admin_key = c.pwd2key(password) if password else self.key
-        self.model = c.module('model.openrouter')(model=model)
+        self.admin_key = h.pwd2key(password) if password else self.key
+        self.model = h.module('model.openrouter')(model=model)
         self.models = self.model.models()
         self.set_history_path(path)
-    @c.endpoint()
+
     def generate(self,  
             text = 'Summarize the code' ,
             temperature= 0.5,
@@ -56,11 +48,10 @@ class Summarizer(Base):
             ):
 
         if not self.public:
-            c.verify(headers)
+            h.verify(headers)
 
         text = self.process_text(text=text,context=context)
 
-        
         response =  self.model.generate(text,
                                         stream=stream, 
                                         model=model, 
@@ -72,7 +63,7 @@ class Summarizer(Base):
                 output += token
                 yield token
         except Exception as e:
-            output = c.detailed_error(e)
+            output = h.detailed_error(e)
 
         data = {
             'input': text, 
@@ -83,13 +74,13 @@ class Summarizer(Base):
             'headers': headers
         }
         self.save_data(data)
-        yield {'success':True, 'msg':'done', 'data_hash':c.hash(data)}
+        yield {'success':True, 'msg':'done', 'data_hash':h.hash(data)}
 
     def process_text(self, text, context=None):
         prompt = self.prompt
         context_content = ''
-        assert c.exists(self.resolve_path(context)), f'Context path {context} does not exist'
-        c.print('Adding content from path', context, color='yellow')
+        assert h.exists(self.resolve_path(context)), f'Context path {context} does not exist'
+        print('Adding content from path', context)
         file2content = self.file2content(context)
         print(file2content, 'FAMMMM')
         for file, content in file2content.items():

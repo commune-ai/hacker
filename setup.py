@@ -27,11 +27,6 @@ setup(
     author_email='',
     license='AGIDOESNTCAREABOUTYOURLISCENCES',
     install_requires=install_requires,
-    entry_points={
-        'console_scripts': [
-            'a=agents.cli:main'
-        ],
-    },
     classifiers=[
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
